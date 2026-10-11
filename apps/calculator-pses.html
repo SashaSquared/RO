@@ -41,6 +41,12 @@
 
   html, body { height: 100%; }
 
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: var(--bg);
@@ -52,6 +58,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .tablet {
@@ -61,7 +69,7 @@
     flex-direction: column;
   }
 
-  .tablet-body { flex: 1; }
+  .tablet-body { flex: 1; padding-bottom: 90px; }
 
   .page-title {
     text-align: center;
@@ -264,7 +272,7 @@
   .act-note { display: block; font-size: 0.7rem; color: var(--muted); font-weight: 400; margin-top: 2px; }
 
   /* ============================================================
-     ПЕРЕКЛЮЧАТЕЛЬ ОБЕДА — СДЕЛАН ЯРКИМ И ЗАМЕТНЫМ
+     ПЕРЕКЛЮЧАТЕЛЬ ОБЕДА
      ============================================================ */
   .lunch-toggle-wrap {
     display: flex;
@@ -786,6 +794,25 @@
     box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.35);
   }
 
+  /* Кнопка сохранения в нижней панели */
+  .save-week-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+  .save-week-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.5);
+    color: #fff !important;
+  }
+  .save-week-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .save-week-btn .spin {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
   /* Draft badge */
   .draft-badge {
     position: fixed;
@@ -951,7 +978,6 @@
       <div id="mainBodiWarn"></div>
     </div>
 
-    <!-- ПЕРЕКЛЮЧАТЕЛЬ ОБЕДА — СДЕЛАН ЯРКИМ -->
     <div class="lunch-toggle-wrap">
       <button type="button" class="lunch-toggle" id="lunchToggle">
         <span class="toggle-emoji">🍽</span>
@@ -1143,6 +1169,14 @@
       <div class="bottombar-inner">
         <div class="bottombar-buttons">
           <button class="btn" onclick="generateReport()">📄 Сформировать отчёт</button>
+          <button class="btn save-week-btn" id="saveWeekBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Записать в отчёт
+          </button>
           <button class="btn btn-ghost" id="copyBtn" onclick="copyReport()">📋 Копировать</button>
           <button class="btn btn-danger" onclick="resetForm()">🔄 Сбросить</button>
         </div>
@@ -1175,10 +1209,7 @@
    СПРАВОЧНИК ПЕРСОНАЛА
    ============================================================ */
 
-// ═══════════════════════════════════════════════════════════════
-// ИЗМЕНЕНО: обновлён URL Google Apps Script (новая БД)
-// ═══════════════════════════════════════════════════════════════
-const API_URL = "https://script.google.com/macros/s/AKfycbxWrnM98pzr8cJAcieRKKZLqZWjG9cJalaOLZNSdNmsjFE0F-0FFHL1xmUP4rTwZvQ/exec";
+const API_URL = "https://hospital-api.asdulgok.workers.dev";
 
 let STAFF = [];
 let STAFF_LOADED = false;
@@ -1387,11 +1418,11 @@ const subInfo        = $('subInfo');
 const extrasList     = $('extrasList');
 const extraTotal     = $('extraTotal');
 const draftBadge     = $('draftBadge');
+const saveWeekBtn    = $('saveWeekBtn');
 
 let showLunch = false;
 let extras = [];
 
-/* Автодополнение */
 attachAutocomplete(fullname, $('acName'), filterByName, s => {
   fullname.value = s.name || '';
   staticId.value = s.passport || '';
@@ -1878,7 +1909,14 @@ function updateAll(){
   renderRequirements(r);
   renderDashboard(r);
   updateBottomSummary(r);
+  updateSaveButtonState();
   debounceSave();
+}
+
+function updateSaveButtonState(){
+  if (!saveWeekBtn) return;
+  const canSave = fullname.value.trim() !== "";
+  saveWeekBtn.disabled = !canSave;
 }
 
 function renderRequirements(r){
@@ -2021,6 +2059,152 @@ function getFailures(r){
   if (r.min < n.min)   fails.push(`Недостаточно минут на посту (${r.min}/${n.min})`);
   if (r.gos < n.gos)   fails.push(`Недостаточно гос. проверок (${r.gos}/${n.gos}, с учётом замен)`);
   return fails;
+}
+
+/* ============================================================
+   СОХРАНЕНИЕ В НЕДЕЛЬНЫЙ ОТЧЁТ ПСЭС
+   ============================================================ */
+function getCalcSession() {
+  try {
+    const raw = localStorage.getItem("hospital_session");
+    if (!raw) return null;
+    const d = JSON.parse(raw);
+    if (d && d.login && d.hash) return d;
+  } catch (e) {}
+  const p = new URLSearchParams(location.search);
+  const pLogin = p.get("login");
+  const pRole = p.get("role");
+  if (!pLogin || !pRole) return null;
+  let hash = null;
+  try {
+    const raw = localStorage.getItem("hospital_session");
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && d.login === pLogin) hash = d.hash;
+    }
+  } catch (e) {}
+  if (!hash) return null;
+  return { login: pLogin, role: pRole, hash: hash };
+}
+
+function getCalcRole() {
+  const s = getCalcSession();
+  return s ? s.role : null;
+}
+
+let _weekIdCache = null;
+async function fetchWorkingWeekId() {
+  if (_weekIdCache) return _weekIdCache;
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "getWeekList" })
+    });
+    const data = await res.json();
+    if (data && data.success && data.currentWeekId) {
+      _weekIdCache = data.currentWeekId;
+      return _weekIdCache;
+    }
+  } catch (e) { console.error("fetchWorkingWeekId:", e); }
+  return null;
+}
+
+function findStaffByName(name) {
+  const target = String(name || "").trim().toLowerCase();
+  if (!target) return null;
+  return STAFF.find(s => String(s.name || "").trim().toLowerCase() === target) || null;
+}
+
+const ALLOWED_DEPTS = ["ПСЭС", "Инст ПСЭС"];
+
+async function saveToWeeklyReport() {
+  const session = getCalcSession();
+  if (!session) {
+    notifyParent("Ошибка", "Нет активной сессии", "alert");
+    return;
+  }
+
+  const name = fullname.value.trim();
+  if (!name) {
+    notifyParent("Ошибка", "Укажите имя сотрудника", "alert");
+    return;
+  }
+
+  const staffItem = findStaffByName(name);
+  if (!staffItem) {
+    notifyParent("Ошибка", "Сотрудник не найден в справочнике", "alert");
+    return;
+  }
+
+  const dept = String(staffItem.department || "").trim();
+
+  if (!ALLOWED_DEPTS.includes(dept)) {
+    notifyParent("Ошибка", "Можно записывать отчёты только для отдела ПСЭС и Инст ПСЭС", "alert");
+    return;
+  }
+
+  if (getCalcRole() === "user" && dept === "Инст ПСЭС") {
+    notifyParent("Ошибка", "Только старший состав может вносить отчёты инструкторов ПСЭС", "alert");
+    return;
+  }
+
+  const weekId = await fetchWorkingWeekId();
+  if (!weekId) {
+    notifyParent("Ошибка", "Не удалось определить рабочую неделю", "alert");
+    return;
+  }
+
+  const r = calc();
+  const points = r.total || 0;
+
+  const btn = saveWeekBtn;
+  if (!btn) return;
+  const oldHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg> Сохранение…';
+
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        action: "saveWeeklyPoints",
+        login: session.login,
+        hash: session.hash,
+        weekId: weekId,
+        name: staffItem.name,
+        passport: staffItem.passport || "",
+        department: staffItem.department || "",
+        rank: staffItem.rank || "",
+        points: points,
+        instrPoints: 0
+      })
+    });
+    const data = await res.json();
+
+    if (data && data.success) {
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Сохранено!';
+      notifyParent(
+        "Недельный отчёт ПСЭС записан",
+        staffItem.name + " · " + points + " баллов",
+        "success"
+      );
+      setTimeout(() => {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+      }, 2000);
+    } else {
+      btn.innerHTML = oldHtml;
+      btn.disabled = false;
+      notifyParent("Ошибка", (data && data.message) || "Не удалось сохранить", "alert");
+    }
+  } catch (err) {
+    console.error(err);
+    btn.innerHTML = oldHtml;
+    btn.disabled = false;
+    notifyParent("Ошибка сети", String(err.message || err), "alert");
+  }
 }
 
 window.generateReport = function(){
@@ -2183,10 +2367,17 @@ remarks.addEventListener('input', () => {
   qsa('.remark-btn').forEach(b => b.classList.toggle('active', remarks.value.includes(b.dataset.text)));
 });
 
+/* Инициализация */
 loadSavedState();
 renderExtras();
 updateAll();
 applyLunchVisibility();
+
+if (saveWeekBtn) {
+  saveWeekBtn.addEventListener("click", saveToWeeklyReport);
+}
+
+fullname.addEventListener("input", updateSaveButtonState);
 
 loadStaff();
 </script>

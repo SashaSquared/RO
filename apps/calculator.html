@@ -27,17 +27,25 @@
 
   html, body { height: 100%; }
 
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: #0d1520;
     color: var(--text);
     line-height: 1.5;
-    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     padding: 16px 16px 24px;
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .tablet {
@@ -45,6 +53,10 @@
     width: 100%;
     display: flex;
     flex-direction: column;
+  }
+
+  .tablet-body {
+    padding-bottom: 90px;
   }
 
   .card {
@@ -553,17 +565,17 @@
 
   .bottombar {
     position: sticky;
-    bottom: 0;
+    bottom: 8px;
     z-index: 30;
     width: 100%;
     margin-top: 14px;
-    background: rgba(10, 14, 20, 0.92);
+    background: rgba(10, 14, 20, 0.96);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 12px 18px;
-    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.55);
   }
   .bottombar-inner {
     display: flex; flex-wrap: wrap; align-items: center;
@@ -660,6 +672,24 @@
   .req-item .req-status { font-size: 0.78rem; margin-left: 8px; }
   .req-item.ok .req-status { color: #86efac; }
   .req-item.bad .req-status { color: #fca5a5; }
+
+  /* Кнопка сохранения в нижней панели */
+  .save-week-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  }
+  .save-week-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+    box-shadow: 0 6px 18px rgba(59, 130, 246, 0.5);
+  }
+  .save-week-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .save-week-btn .spin {
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
 
   @media (max-width: 640px) {
     body { padding: 12px 12px 20px; }
@@ -998,6 +1028,14 @@
       <div class="bottombar-inner">
         <div class="bottombar-buttons">
           <button class="btn" onclick="generateFullReport()">📄 Сформировать отчёт</button>
+          <button class="btn save-week-btn" id="saveWeekBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Записать в отчёт
+          </button>
           <button class="btn btn-ghost" id="copyBtn" onclick="copyReport()">📋 Копировать</button>
           <button class="btn btn-danger" onclick="resetForm()">🔄 Сбросить всё</button>
         </div>
@@ -1029,10 +1067,7 @@
 (function () {
   "use strict";
 
-  // ═══════════════════════════════════════════════════════════════
-  // ИЗМЕНЕНО: обновлён URL Google Apps Script (новая БД)
-  // ═══════════════════════════════════════════════════════════════
-  const API_URL = "https://script.google.com/macros/s/AKfycbxWrnM98pzr8cJAcieRKKZLqZWjG9cJalaOLZNSdNmsjFE0F-0FFHL1xmUP4rTwZvQ/exec";
+  const API_URL = "https://hospital-api.asdulgok.workers.dev";
   const DRAFT_KEY = "smp_calc_draft_v16";
 
   const MIN_TOTAL_INSTR = 400;
@@ -1498,6 +1533,166 @@
         }, "*");
       }
     } catch (e) {}
+  }
+
+  /* ============================================================
+     СОХРАНЕНИЕ БАЛЛОВ В НЕДЕЛЬНЫЙ ОТЧЁТ
+     ============================================================ */
+
+  function getCalcSession() {
+    try {
+      const raw = localStorage.getItem("hospital_session");
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (d && d.login && d.hash) return d;
+    } catch (e) {}
+    const p = new URLSearchParams(location.search);
+    const pLogin = p.get("login");
+    const pRole = p.get("role");
+    if (!pLogin || !pRole) return null;
+    let hash = null;
+    try {
+      const raw = localStorage.getItem("hospital_session");
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && d.login === pLogin) hash = d.hash;
+      }
+    } catch (e) {}
+    if (!hash) return null;
+    return { login: pLogin, role: pRole, hash: hash };
+  }
+
+  function isCalcAdmin() {
+    const s = getCalcSession();
+    if (!s) return false;
+    return s.role === "admin" || s.role === "superadmin";
+  }
+
+  function isCalcUser() {
+    const s = getCalcSession();
+    if (!s) return false;
+    return s.role === "user";
+  }
+
+  let _weekIdCache = null;
+  async function fetchWorkingWeekId() {
+    if (_weekIdCache) return _weekIdCache;
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "getWeekList" })
+      });
+      const data = await res.json();
+      if (data && data.success && data.currentWeekId) {
+        _weekIdCache = data.currentWeekId;
+        return _weekIdCache;
+      }
+    } catch (e) { console.error("fetchWorkingWeekId:", e); }
+    return null;
+  }
+
+  function findStaffByName(name) {
+    const target = String(name || "").trim().toLowerCase();
+    if (!target) return null;
+    return staff.find(s => String(s.name || "").trim().toLowerCase() === target) || null;
+  }
+
+  /* ============================================================
+     ЕДИНАЯ КНОПКА «Записать в отчёт»
+     ============================================================ */
+  async function saveToWeeklyReport() {
+    const session = getCalcSession();
+    if (!session) {
+      notifyParent("Ошибка", "Нет активной сессии", "alert");
+      return;
+    }
+
+    const name = fullnameInput.value.trim();
+    if (!name) {
+      notifyParent("Ошибка", "Укажите имя сотрудника", "alert");
+      return;
+    }
+
+    const staffItem = findStaffByName(name);
+    if (!staffItem) {
+      notifyParent("Ошибка", "Сотрудник не найден в справочнике", "alert");
+      return;
+    }
+
+    const dept = String(staffItem.department || "").trim();
+    const ALLOWED_DEPTS = ["СМП", "Инст СМП"];
+
+    if (!ALLOWED_DEPTS.includes(dept)) {
+      notifyParent("Ошибка", "Можно записывать отчёты только для отдела СМП и Инст СМП", "alert");
+      return;
+    }
+
+    const isInstrDept = (dept === "Инст СМП");
+
+    // Для Инст СМП — только старший состав
+    if (isInstrDept && !isCalcAdmin()) {
+      notifyParent("Ошибка", "Только старший состав может вносить отчёты инструкторов СМП", "alert");
+      return;
+    }
+
+    const weekId = await fetchWorkingWeekId();
+    if (!weekId) {
+      notifyParent("Ошибка", "Не удалось определить рабочую неделю", "alert");
+      return;
+    }
+
+    const s = calc();
+    const points = s.totalPoints || 0;
+    const instrPoints = isInstrDept ? (s.instrPoints || 0) : 0;
+
+    const btn = document.getElementById("saveWeekBtn");
+    if (!btn) return;
+    const oldHtml = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2 a10 10 0 0 1 10 10"/></svg> Сохранение…';
+
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "saveWeeklyPoints",
+          login: session.login,
+          hash: session.hash,
+          weekId: weekId,
+          name: staffItem.name,
+          passport: staffItem.passport || "",
+          department: staffItem.department || "",
+          rank: staffItem.rank || "",
+          points: points,
+          instrPoints: instrPoints
+        })
+      });
+      const data = await res.json();
+
+      if (data && data.success) {
+        btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Сохранено!';
+        notifyParent(
+          "Отчёт записан",
+          staffItem.name + " · " + points + " общих" + (isInstrDept ? " / " + instrPoints + " инстр." : ""),
+          "success"
+        );
+        setTimeout(() => {
+          btn.innerHTML = oldHtml;
+          btn.disabled = false;
+        }, 2000);
+      } else {
+        btn.innerHTML = oldHtml;
+        btn.disabled = false;
+        notifyParent("Ошибка", (data && data.message) || "Не удалось сохранить", "alert");
+      }
+    } catch (err) {
+      console.error(err);
+      btn.innerHTML = oldHtml;
+      btn.disabled = false;
+      notifyParent("Ошибка сети", String(err.message || err), "alert");
+    }
   }
 
   let staff = [];
@@ -2619,6 +2814,16 @@
     syncQrButtons();
     renderDashboard();
     loadStaff();
+
+    const saveBtn = document.getElementById("saveWeekBtn");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", saveToWeeklyReport);
+    }
+
+    fullnameInput.addEventListener('input', () => {
+      const canSave = fullnameInput.value.trim() !== "";
+      if (saveBtn) saveBtn.disabled = !canSave;
+    });
   }
 
   init();

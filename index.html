@@ -32,6 +32,12 @@
 
   html, body { height: 100%; }
 
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: radial-gradient(circle at top, #16202e 0%, var(--bg) 60%);
@@ -40,6 +46,8 @@
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   .tablet {
@@ -180,6 +188,7 @@
     min-width: 220px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
     z-index: 40;
+    max-height: 420px; overflow-y: auto;
   }
   .desk-list.open { display: flex; }
   .desk-list button {
@@ -196,7 +205,7 @@
     color: #86efac; font-weight: 700;
   }
 
-  .tablet-body { flex: 1; padding: 20px; overflow-y: auto; }
+  .tablet-body { flex: 1; padding: 20px; overflow: visible; }
 
   .auth-screen {
     min-height: calc(100vh - 60px);
@@ -409,7 +418,6 @@
   .staff-table .uid { color: var(--accent-2); font-weight: 700; font-variant-numeric: tabular-nums; }
   .staff-table .discord { color: var(--blue); font-weight: 600; white-space: nowrap; }
 
-  /* Подсветка сотрудников в отпуске */
   .staff-table tr.staff-on-vacation { background: rgba(245, 185, 74, 0.08); }
   .staff-table tr.staff-on-vacation:hover { background: rgba(245, 185, 74, 0.14); }
   .staff-table tr.staff-on-vacation td b { color: #fcd97e; }
@@ -444,6 +452,10 @@
   .dept-pill.dept-смп { background: #991b1b; color: #fecaca; }
   .dept-pill.dept-ит { background: #14532d; color: #bbf7d0; }
   .dept-pill.dept-псэс { background: #1e40af; color: #bfdbfe; }
+  .dept-pill.dept-инст-псэс { background: #0891b2; color: #cffafe; }
+  .dept-pill.dept-инст-смп  { background: #b45309; color: #fde68a; }
+  .dept-pill.dept-инст-ит   { background: #065f46; color: #a7f3d0; }
+  .dept-pill.dept-инст-ок   { background: #6d28d9; color: #ddd6fe; }
 
   .empty, .loading { color: var(--muted); font-size: 0.86rem; text-align: center; padding: 20px 0; }
 
@@ -474,8 +486,8 @@
 
   .iframe-wrap {
     width: 100%;
-    height: calc(100vh - 220px);
-    min-height: 480px;
+    height: calc(100vh - 200px);
+    min-height: 520px;
     background: #0d1520;
     border: 1px solid var(--border);
     border-radius: 16px;
@@ -731,6 +743,44 @@
     font-size: 0.9rem; color: var(--muted); font-style: italic;
   }
 
+  /* ============ МОДАЛКА ПРИНУДИТЕЛЬНОЙ СМЕНЫ ПАРОЛЯ ============ */
+  .modal-back {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 10000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: fadeIn .18s ease;
+  }
+  .modal-back.hidden { display: none !important; }
+  .modal {
+    width: 100%; max-width: 460px;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 26px 22px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.8);
+    position: relative;
+  }
+  .modal .modal-emblem {
+    width: 56px; height: 56px;
+    margin: 0 auto 14px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f59e0b, #b45309);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25), 0 8px 24px rgba(245, 158, 11, 0.35);
+  }
+  .modal .modal-emblem svg { width: 28px; height: 28px; color: #fff; }
+  .modal h2 {
+    text-align: center; font-size: 1.15rem; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .modal .modal-sub {
+    text-align: center; color: var(--muted);
+    font-size: 0.84rem; margin-bottom: 20px; line-height: 1.5;
+  }
+  .modal .form-group { margin-bottom: 12px; }
+
   @media (max-width: 600px) {
     .tablet-body { padding: 14px; }
     .app-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -934,7 +984,11 @@
               <option value="ОК">ОК — Отдел кадров</option>
               <option value="СМП" selected>СМП — Скорая медицинская помощь</option>
               <option value="ИТ">ИТ — Интенсивная терапия</option>
-              <option value="ПСЭС">ПСЭС — Психолого-санитарная служба</option>
+              <option value="ПСЭС">ПСЭС</option>
+              <option value="Инст ПСЭС">Инст ПСЭС — Инструктор ПСЭС</option>
+              <option value="Инст СМП">Инст СМП — Инструктор СМП</option>
+              <option value="Инст ИТ">Инст ИТ — Инструктор ИТ</option>
+              <option value="Инст ОК">Инст ОК — Инструктор ОК</option>
             </select>
           </div>
           <div class="form-group">
@@ -1036,7 +1090,7 @@
         <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="toggle-row" style="border:none;background:transparent;padding:0;">
             <span style="color:var(--muted)">Версия планшета</span>
-            <span style="color:var(--text);font-weight:600">2.2</span>
+            <span style="color:var(--text);font-weight:600">2.4</span>
           </div>
           <div class="toggle-row" style="border:none;background:transparent;padding:0;">
             <span style="color:var(--muted)">Сервер (Apps Script)</span>
@@ -1080,16 +1134,50 @@
   </div>
 </div>
 
+<!-- ============ МОДАЛКА ПРИНУДИТЕЛЬНОЙ СМЕНЫ ПАРОЛЯ ============ -->
+<div class="modal-back hidden" id="forcePasswordModal">
+  <div class="modal">
+    <div class="modal-emblem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <h2>Смените пароль</h2>
+    <p class="modal-sub">
+      Вы вошли с временным паролем. Пока вы его не смените, доступ к планшету закрыт.
+    </p>
+
+    <form id="forcePasswordForm">
+      <div class="form-group">
+        <label for="fpNew1">Новый пароль</label>
+        <input type="password" id="fpNew1" required autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label for="fpNew2">Повторите новый пароль</label>
+        <input type="password" id="fpNew2" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn btn-block" id="fpSubmit">Сменить пароль и продолжить</button>
+      <div class="notification" id="fpNotification"></div>
+    </form>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
 
-  // ═══════════════════════════════════════════════════════════════
-  // ИЗМЕНЕНО: обновлён URL Google Apps Script (новая БД)
-  // ═══════════════════════════════════════════════════════════════
-  const API_URL = "https://script.google.com/macros/s/AKfycbxWrnM98pzr8cJAcieRKKZLqZWjG9cJalaOLZNSdNmsjFE0F-0FFHL1xmUP4rTwZvQ/exec";
+  const API_URL = "https://hospital-api.asdulkok.workers.dev";
+  const API_URL_ACTUAL = "https://hospital-api.asdulgok.workers.dev";
 
-  const DEPARTMENTS = ["Руководство", "АБ", "ОК", "СМП", "ИТ", "ПСЭС"];
+  // Хэш SHA-256 от "12345"
+  const TEMP_PASSWORD_HASH = "5994471abb01112afcc18159f6cc74b4f511b99806da59b3caf5a9c173cacfc5";
+
+  const DEPARTMENTS = [
+    "Руководство", "АБ", "ОК", "СМП", "ИТ", "ПСЭС",
+    "Инст ПСЭС", "Инст СМП", "Инст ИТ", "Инст ОК"
+  ];
 
   const DEPT_LABEL = {
     "Руководство": "Руководство",
@@ -1097,8 +1185,16 @@
     "ОК": "Отдел кадров",
     "СМП": "Скорая медицинская помощь",
     "ИТ": "Интенсивная терапия",
-    "ПСЭС": "Психолого-санитарная служба"
+    "ПСЭС": "ПСЭС",
+    "Инст ПСЭС": "Инструктор ПСЭС",
+    "Инст СМП":  "Инструктор СМП",
+    "Инст ИТ":   "Инструктор ИТ",
+    "Инст ОК":   "Инструктор ОК"
   };
+
+  const DESK_DEPARTMENTS = [
+    "Руководство", "АБ", "ОК", "СМП", "ИТ", "ПСЭС"
+  ];
 
   const ROLE_LABEL = {
     superadmin: "Суперпользователь",
@@ -1138,10 +1234,10 @@
     toastsEnabled: true,
     soundEnabled: true,
     editingUserRow: null,
-
     myBookings: [],
     reminderTimers: {},
-    reminderDone: {}
+    reminderDone: {},
+    forcePasswordChange: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -1222,6 +1318,13 @@
   const toastsToggle = $("toastsToggle");
   const soundToggle = $("soundToggle");
   const testToastBtn = $("testToastBtn");
+
+  const forcePasswordModal = $("forcePasswordModal");
+  const forcePasswordForm = $("forcePasswordForm");
+  const fpNew1 = $("fpNew1");
+  const fpNew2 = $("fpNew2");
+  const fpSubmit = $("fpSubmit");
+  const fpNotification = $("fpNotification");
 
   /* Часы */
   function tickClock() {
@@ -1381,7 +1484,7 @@
 
   /* Сеть */
   async function apiPost(payload) {
-    const res = await fetch(API_URL, {
+    const res = await fetch(API_URL_ACTUAL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
@@ -1527,21 +1630,47 @@
       color: "purple",
       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>',
       frame: "apps/exam-smp.html"
+    },
+    weeklyReports: {
+      label: "Недельные отчёты СМП",
+      sub: "Сдача · освобождения · топ",
+      color: "blue",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="19" x2="13" y2="19"/></svg>',
+      frame: "apps/weekly-reports.html"
+    },
+    weeklyReportsPses: {
+      label: "Недельные отчёты ПСЭС",
+      sub: "Сдача · топ · должники",
+      color: "green",
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="19" x2="13" y2="19"/></svg>',
+      frame: "apps/weekly-reports-pses.html"
     }
   };
 
   function getAppsForDesk() {
-    const dept = state.activeDesk || (state.user && state.user.department) || "—";
+    const rawDept = state.activeDesk || (state.user && state.user.department) || "—";
+
+    const dept =
+      rawDept === "Инст СМП"  ? "СМП"  :
+      rawDept === "Инст ПСЭС" ? "ПСЭС" :
+      rawDept === "Инст ИТ"   ? "ИТ"   :
+      rawDept === "Инст ОК"   ? "ОК"   :
+      rawDept;
+
     const base = ["staff", "vacations", "about"];
 
     if (isAdmin()) base.splice(2, 0, "users");
 
     if (dept === "СМП") {
-      base.splice(base.length - 1, 0, "calculator", "booking", "examSmp");
+      base.splice(base.length - 1, 0, "calculator", "weeklyReports", "booking", "examSmp");
     }
 
     if (dept === "ПСЭС") {
-      base.splice(base.length - 1, 0, "calculatorPses", "examPses");
+      base.splice(base.length - 1, 0, "calculatorPses", "examPses", "weeklyReportsPses");
+    }
+
+    if (dept === "Руководство") {
+      base.splice(base.length - 1, 0, "weeklyReports");
     }
 
     return base;
@@ -1565,7 +1694,6 @@
         '<div class="label">' + a.label + '</div>' +
         '<div class="sub">' + a.sub + '</div>';
 
-      // Бейдж на плитке "Отпуска"
       if (key === "vacations") {
         const active = getActiveVacations().length;
         if (active > 0) {
@@ -1704,7 +1832,7 @@
     if (!gosScheduleWidget) return;
 
     const dept = state.activeDesk || (state.user && state.user.department) || "—";
-    const shouldShow = dept === "ПСЭС";
+    const shouldShow = dept === "ПСЭС" || dept === "Инст ПСЭС";
 
     gosScheduleWidget.classList.toggle("hidden", !shouldShow);
     if (!shouldShow) { gosScheduleWidget.innerHTML = ""; return; }
@@ -1873,7 +2001,7 @@
   function scheduleCheckTick() {
     if (!state.user) return;
     const dept = state.activeDesk || state.user.department;
-    if (dept !== "ПСЭС") return;
+    if (dept !== "ПСЭС" && dept !== "Инст ПСЭС") return;
     if (!state.schedule.length) return;
 
     const now = new Date();
@@ -2050,7 +2178,7 @@
   function renderDeskSwitcher() {
     currentDesk.textContent = DEPT_LABEL[state.activeDesk] || state.activeDesk;
     deskList.innerHTML = "";
-    DEPARTMENTS.forEach((dept) => {
+    DESK_DEPARTMENTS.forEach((dept) => {
       const b = document.createElement("button");
       b.type = "button";
       b.classList.toggle("active", dept === state.activeDesk);
@@ -2087,7 +2215,8 @@
       login: state.user ? state.user.login : "",
       role: state.user ? state.user.role : "",
       dept: state.user ? state.user.department : "",
-      desk: state.activeDesk || ""
+      desk: state.activeDesk || "",
+      discord: state.user ? (state.user.discord || "") : ""
     });
     appIframe.src = a.frame + "?" + params.toString();
     showScreen("frame");
@@ -2127,6 +2256,14 @@
       setNetworkStatus(true);
       ensureAudioCtx();
 
+      // Если вошли с паролем 12345 — требуем смену
+      if (hash === TEMP_PASSWORD_HASH) {
+        state.forcePasswordChange = true;
+        forcePasswordModal.classList.remove("hidden");
+        setTimeout(() => fpNew1.focus(), 100);
+        return;
+      }
+
       await loadSchedule();
       await loadVacations();
       await refreshMyBookings();
@@ -2146,6 +2283,70 @@
     } finally {
       authSubmit.disabled = false;
       authSubmit.textContent = original;
+    }
+  }
+
+  /* Принудительная смена пароля */
+  async function handleForcePasswordChange(e) {
+    e.preventDefault();
+    if (!state.user) return;
+
+    const newPass1 = fpNew1.value;
+    const newPass2 = fpNew2.value;
+
+    if (!newPass1 || !newPass2) { notify(fpNotification, "Заполните все поля", "error"); return; }
+    if (newPass1.length < 4) { notify(fpNotification, "Пароль слишком короткий (мин. 4)", "error"); return; }
+    if (newPass1 !== newPass2) { notify(fpNotification, "Пароли не совпадают", "error"); return; }
+    if (newPass1 === "12345") { notify(fpNotification, "Нельзя оставить пароль 12345", "error"); return; }
+
+    fpSubmit.disabled = true;
+    const original = fpSubmit.textContent;
+    fpSubmit.textContent = "Меняем…";
+
+    try {
+      const oldHash = state.user.hash;
+      const newHash = await sha256Hex(newPass1);
+      const data = await apiPost({
+        action: "changePassword",
+        login: state.user.login,
+        hash: state.user.hash,
+        oldHash: oldHash,
+        newHash: newHash
+      });
+
+      if (!data.success) {
+        notify(fpNotification, data.message || "Не удалось сменить пароль", "error");
+        return;
+      }
+
+      state.user.hash = newHash;
+      saveSession(state.user);
+      state.forcePasswordChange = false;
+
+      notify(fpNotification, "Пароль изменён", "success");
+
+      // Пускаем в планшет сразу
+      await loadSchedule();
+      await loadVacations();
+      await refreshMyBookings();
+      forcePasswordModal.classList.add("hidden");
+      fpNew1.value = "";
+      fpNew2.value = "";
+      showScreen("desk");
+      renderDesk();
+      scheduleCheckTickBookings();
+
+      showToast({
+        type: "success",
+        title: "Пароль изменён",
+        text: "Добро пожаловать, " + state.user.login
+      });
+    } catch (err) {
+      console.error(err);
+      notify(fpNotification, "Ошибка сети", "error");
+    } finally {
+      fpSubmit.disabled = false;
+      fpSubmit.textContent = original;
     }
   }
 
@@ -2252,7 +2453,7 @@
         sel.addEventListener("change", () => updateUserField(u, { newDepartment: sel.value }));
         tdDept.appendChild(sel);
       } else {
-        const deptCls = "dept-" + String(u.department || "").toLowerCase();
+        const deptCls = "dept-" + String(u.department || "").toLowerCase().replace(/\s+/g, "-");
         tdDept.innerHTML = '<span class="dept-pill ' + deptCls + '">' + escapeHtml(u.department || "—") + '</span>';
       }
 
@@ -2594,7 +2795,7 @@
     } else if (e.data.type === "vacations-changed") {
       loadVacations();
     } else if (e.data.type === "staff-changed") {
-      // Ничего не нужно — приложение персонала само загружает данные
+      // Ничего не нужно
     }
   });
 
@@ -2607,6 +2808,7 @@
     passwordForm.addEventListener("submit", handleChangePassword);
     profileForm.addEventListener("submit", handleProfileSave);
     registerForm.addEventListener("submit", handleRegisterUser);
+    forcePasswordForm.addEventListener("submit", handleForcePasswordChange);
 
     document.querySelectorAll("[data-back]").forEach((b) => {
       b.addEventListener("click", () => { showScreen("desk"); renderDesk(); });
@@ -2661,27 +2863,39 @@
       state.notifiedKeys = {};
       state.myBookings = [];
       state.reminderTimers = {};
+      state.forcePasswordChange = false;
       applySessionToUI();
       userChip.classList.add("hidden");
       deskSwitcher.classList.remove("visible");
       showScreen("auth");
       authForm.reset();
+      forcePasswordModal.classList.add("hidden");
     });
 
     const session = loadSession();
     if (session) {
-      state.user = session;
-      state.activeDesk = session.department || "Руководство";
-      applySessionToUI();
-      showScreen("desk");
-      setNetworkStatus(true);
-      loadSchedule()
-        .then(() => loadVacations())
-        .then(() => refreshMyBookings())
-        .then(() => {
-          renderDesk();
-          scheduleCheckTickBookings();
-        });
+      // Проверка: если в сессии временный пароль — принудительно требуем смену
+      if (session.hash === TEMP_PASSWORD_HASH) {
+        state.user = session;
+        state.activeDesk = session.department || "Руководство";
+        applySessionToUI();
+        showScreen("auth");
+        forcePasswordModal.classList.remove("hidden");
+        setTimeout(() => fpNew1.focus(), 100);
+      } else {
+        state.user = session;
+        state.activeDesk = session.department || "Руководство";
+        applySessionToUI();
+        showScreen("desk");
+        setNetworkStatus(true);
+        loadSchedule()
+          .then(() => loadVacations())
+          .then(() => refreshMyBookings())
+          .then(() => {
+            renderDesk();
+            scheduleCheckTickBookings();
+          });
+      }
     } else {
       showScreen("auth");
     }

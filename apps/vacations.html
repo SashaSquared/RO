@@ -32,8 +32,18 @@
     --amber: #f5b94a;
     --amber-bg: rgba(245, 185, 74, 0.12);
     --amber-text: #fcd97e;
+    --purple: #a78bfa;
+    --purple-bg: rgba(167, 139, 250, 0.18);
+    --purple-border: rgba(167, 139, 250, 0.5);
   }
   html, body { height: 100%; }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0;
+    display: none;
+  }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -46,6 +56,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   .tablet { max-width: 1100px; width: 100%; }
   .page-title {
@@ -113,7 +125,8 @@
   }
   .vac-row.active   { background: var(--good-bg-strong); border-color: var(--good-border); border-left-color: var(--good); }
   .vac-row.overdue  { background: var(--red-bg-strong);  border-color: var(--red-border);  border-left-color: var(--red); }
-  .vac-row.upcoming, .vac-row.completed { opacity: 0.82; }
+  .vac-row.upcoming, .vac-row.completed, .vac-row.cancelled { opacity: 0.82; }
+  .vac-row.cancelled { background: rgba(239, 68, 68, 0.06); border-color: rgba(239, 68, 68, 0.25); border-left-color: rgba(239, 68, 68, 0.5); }
   .vac-avatar {
     width: 32px; height: 32px; border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
@@ -122,6 +135,7 @@
   }
   .vac-row.active .vac-avatar  { background: linear-gradient(135deg, #4ade80 0%, #15803d 100%); }
   .vac-row.overdue .vac-avatar { background: linear-gradient(135deg, #f87171 0%, #991b1b 100%); }
+  .vac-row.cancelled .vac-avatar { background: linear-gradient(135deg, #6b7280 0%, #374151 100%); }
   .vac-main { min-width: 0; }
   .vac-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; line-height: 1.3; }
   .vac-name { font-size: 0.92rem; font-weight: 600; }
@@ -141,6 +155,10 @@
   .dept-pill.dept-смп { background: #991b1b; color: #fecaca; }
   .dept-pill.dept-ит { background: #14532d; color: #bbf7d0; }
   .dept-pill.dept-псэс { background: #1e40af; color: #bfdbfe; }
+  .dept-pill.dept-инст-псэс { background: #0891b2; color: #cffafe; }
+  .dept-pill.dept-инст-смп  { background: #b45309; color: #fde68a; }
+  .dept-pill.dept-инст-ит   { background: #065f46; color: #a7f3d0; }
+  .dept-pill.dept-инст-ок   { background: #6d28d9; color: #ddd6fe; }
   .vac-dates {
     font-size: 0.78rem; font-weight: 500; color: var(--text-soft);
     font-variant-numeric: tabular-nums; white-space: nowrap;
@@ -157,6 +175,9 @@
   .status-badge.overdue   { background: var(--red); color: #fff; }
   .status-badge.upcoming  { background: var(--accent-bg-strong); color: var(--accent-2); border: 1px solid var(--accent-border); }
   .status-badge.completed { background: var(--panel-3); color: var(--muted); border: 1px solid var(--border); }
+  .status-badge.cancelled { background: var(--red-bg-strong); color: var(--red-text); border: 1px solid var(--red-border); cursor: pointer; transition: filter 0.15s, transform 0.1s; }
+  .status-badge.cancelled:hover { filter: brightness(1.25); }
+  .status-badge.cancelled:active { transform: scale(0.96); }
   .vac-note { font-size: 0.76rem; font-weight: 600; white-space: nowrap; }
   .vac-note.green { color: var(--good-text); }
   .vac-note.red   { color: var(--red-text); }
@@ -287,6 +308,75 @@
   .toast.info  .toast-ic { background: var(--accent); }
   .toast .toast-ic svg { width: 12px; height: 12px; color: #071018; }
   .hidden { display: none !important; }
+
+  /* ============ МОДАЛКИ ============ */
+  .modal-back {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    animation: fadeIn .18s ease;
+  }
+  .modal-back.hidden { display: none !important; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+  .modal {
+    width: 100%; max-width: 460px;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.7);
+  }
+  .modal h3 {
+    font-size: 1.05rem; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .modal h3 .m-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--good-bg-strong); color: var(--good-text);
+    flex-shrink: 0;
+  }
+  .modal h3 .m-icon svg { width: 18px; height: 18px; }
+  .modal h3 .m-icon.purple {
+    background: var(--purple-bg); color: var(--purple);
+  }
+  .modal-who {
+    padding: 10px 12px;
+    border-radius: 9px;
+    background: var(--panel-3);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    font-size: 0.86rem;
+  }
+  .modal-who .name { font-weight: 700; color: #fff; }
+  .modal-who .sub { color: var(--muted); font-size: 0.76rem; margin-top: 2px; }
+  .modal label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .modal textarea {
+    width: 100%; min-height: 80px;
+    padding: 10px 12px; font-family: inherit; font-size: 0.9rem;
+    background: #0d1520; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    resize: vertical; outline: none;
+  }
+  .modal textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg-strong); }
+  .modal-read-block {
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #0d1520;
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-soft);
+    white-space: pre-wrap;
+    word-break: break-word;
+    min-height: 56px;
+  }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
   @media (max-width: 640px) {
     body { padding: 12px 12px 20px; font-size: 14px; }
     .card { padding: 12px; border-radius: 10px; }
@@ -348,7 +438,7 @@
         <option value="active">🟢 В отпуске</option>
         <option value="overdue">🔴 Просрочен</option>
         <option value="upcoming">⚪ Запланирован</option>
-        <option value="completed">⚪ Завершён</option>
+        <option value="cancelled">🔄 Отменён</option>
       </select>
     </div>
 
@@ -422,23 +512,92 @@
   </div>
 </div>
 
+<!-- ============ МОДАЛКА ВОЗВРАТА ИЗ ОТПУСКА ============ -->
+<div class="modal-back hidden" id="finishModal">
+  <div class="modal">
+    <h3>
+      <span class="m-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 14 4 9 9 4"/>
+          <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+        </svg>
+      </span>
+      Возврат из отпуска
+    </h3>
+
+    <div class="modal-who">
+      <div class="name" id="finishWhoName">—</div>
+      <div class="sub" id="finishWhoSub">—</div>
+    </div>
+
+    <label for="finishReason">Причина возврата (обязательно)</label>
+    <textarea id="finishReason" placeholder="Например: вернулся раньше по личным обстоятельствам"></textarea>
+
+    <div class="modal-actions">
+      <button class="btn" type="button" id="finishCancel">Отмена</button>
+      <button class="btn btn-primary" type="button" id="finishConfirm">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Отметить возврат
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ МОДАЛКА ИНФОРМАЦИИ О ВОЗВРАТЕ ============ -->
+<div class="modal-back hidden" id="finishInfoModal">
+  <div class="modal">
+    <h3>
+      <span class="m-icon purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </span>
+      Информация о возврате
+    </h3>
+
+    <div class="modal-who">
+      <div class="name" id="finishInfoWhoName">—</div>
+      <div class="sub" id="finishInfoWhoSub">—</div>
+    </div>
+
+    <label>Причина возврата</label>
+    <div class="modal-read-block" id="finishInfoComment">—</div>
+
+    <div class="modal-actions">
+      <button class="btn btn-primary" type="button" id="finishInfoClose">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Понятно
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function () {
   "use strict";
 
-  // ═══════════════════════════════════════════════════════════════
-  // ИЗМЕНЕНО: обновлён URL Google Apps Script (новая БД)
-  // ═══════════════════════════════════════════════════════════════
-  const API_URL = "https://script.google.com/macros/s/AKfycbxWrnM98pzr8cJAcieRKKZLqZWjG9cJalaOLZNSdNmsjFE0F-0FFHL1xmUP4rTwZvQ/exec";
+  const API_URL = "https://hospital-api.asdulgok.workers.dev";
 
-  const DEPARTMENTS = ["Руководство", "АБ", "ОК", "СМП", "ИТ", "ПСЭС"];
-  const DEPT_LABEL = { "Руководство":"Руководство","АБ":"АБ","ОК":"ОК","СМП":"СМП","ИТ":"ИТ","ПСЭС":"ПСЭС" };
+  const DEPARTMENTS = [
+    "Руководство", "АБ", "ОК", "СМП", "ИТ", "ПСЭС",
+    "Инст ПСЭС", "Инст СМП", "Инст ИТ", "Инст ОК"
+  ];
+  const DEPT_LABEL = {
+    "Руководство":"Руководство","АБ":"АБ","ОК":"ОК","СМП":"СМП","ИТ":"ИТ","ПСЭС":"ПСЭС",
+    "Инст ПСЭС":"Инст ПСЭС", "Инст СМП":"Инст СМП", "Инст ИТ":"Инст ИТ", "Инст ОК":"Инст ОК"
+  };
 
   /* Лимиты */
-  const LIMIT_IC_DAYS = 3;         // макс. длительность одного IC
-  const LIMIT_OOC_DAYS = 14;       // макс. длительность одного OOC
-  const LIMIT_TOTAL_DAYS = 14;     // суммарный лимит IC + OOC
-  const LIMIT_WINDOW_DAYS = 30;    // окно в днях
+  const LIMIT_IC_DAYS = 3;
+  const LIMIT_OOC_DAYS = 14;
+  const LIMIT_TOTAL_DAYS = 14;
+  const LIMIT_WINDOW_DAYS = 30;
 
   const state = {
     user: null,
@@ -447,6 +606,7 @@
     staffLoaded: false,
     editingRowIndex: null,
     selectedStaff: null,
+    finishTarget: null,
     activeSuggest: { name: -1, passport: -1 }
   };
 
@@ -540,9 +700,6 @@
     d.setHours(0,0,0,0);
     return Math.round((t - d) / 86400000);
   }
-
-  /* Сколько дней между двумя датами (не включая границы).
-     Например, между 1 и 31 = 29 дней. */
   function daysBetweenStrict(a, b) {
     const da = parseDate(a), db = parseDate(b);
     if (!da || !db) return 0;
@@ -551,24 +708,18 @@
 
   /* ---------- Статус ---------- */
   function getStatus(v) {
-    if (v.returned) return "completed";
+    if (v.returned) return "cancelled";
     const today = todayStr();
     if (today < v.start) return "upcoming";
     if (today <= v.end) return "active";
     return "overdue";
   }
   function statusLabel(s) {
-    return { active:"В отпуске", overdue:"Просрочен", upcoming:"Запланирован", completed:"Завершён" }[s] || s;
+    return { active:"В отпуске", overdue:"Просрочен", upcoming:"Запланирован", cancelled:"Отменён" }[s] || s;
   }
 
   /* ============================================================
      ВАЛИДАЦИЯ
-     Правила:
-       1) IC: длительность ≤ 3 дня
-       2) OOC: длительность ≤ 14 дней
-       3) Суммарно IC + OOC ≤ 14 дней в окне 30 дней у одного сотрудника.
-          Окно: [start - 29 дней; end] вокруг нового отпуска, пересечение по датам.
-     Возвращает массив warnings {kind: "err"|"warn", text}.
      ============================================================ */
   function validate(v, editingRow) {
     const w = [];
@@ -580,7 +731,6 @@
 
     const dur = daysBetween(v.start, v.end);
 
-    // --- 1) Проверка длительности конкретного отпуска ---
     if (v.type === "IC" && dur > LIMIT_IC_DAYS) {
       w.push({ kind:"err", text:"IC: " + dur + " дн. (макс. " + LIMIT_IC_DAYS + ")." });
     }
@@ -588,7 +738,6 @@
       w.push({ kind:"err", text:"OOC: " + dur + " дн. (макс. " + LIMIT_OOC_DAYS + ")." });
     }
 
-    // --- 2) IC: не чаще 1 раза в 14 дней ---
     if (v.type === "IC") {
       const prevIC = state.vacations
         .filter(x => x.rowIndex !== editingRow && x.type === "IC" && x.end < v.start)
@@ -605,8 +754,6 @@
       }
     }
 
-    // --- 3) Общий лимит 14 дней IC + OOC в окне 30 дней ---
-    // Окно: 29 дней до start (включительно с самим start) → проверяем пересечение с [start - 29; end]
     const windowStart = (() => {
       const d = parseDate(v.start);
       if (!d) return v.start;
@@ -617,20 +764,16 @@
     })();
     const windowEnd = v.end;
 
-    // Собираем чужие отпуска того же сотрудника, пересекающиеся с окном
     const sameName = (v.name || "").trim().toLowerCase();
     const overlapping = state.vacations.filter(x => {
       if (x.rowIndex === editingRow) return false;
       if (!sameName) return false;
       if ((x.name || "").trim().toLowerCase() !== sameName) return false;
-
-      // Пересечение [x.start; x.end] с [windowStart; windowEnd]
       if (x.end < windowStart) return false;
       if (x.start > windowEnd) return false;
       return true;
     });
 
-    // Считаем суммарное количество дней пересечения каждого отпуска с окном
     let usedDays = 0;
     overlapping.forEach(x => {
       const s = x.start > windowStart ? x.start : windowStart;
@@ -639,7 +782,6 @@
       if (d > 0) usedDays += d;
     });
 
-    // Дней в окне от нового отпуска (только его длительность)
     const newDays = dur;
 
     if (usedDays + newDays > LIMIT_TOTAL_DAYS) {
@@ -650,7 +792,6 @@
               (usedDays + newDays) + " дн. (макс. " + LIMIT_TOTAL_DAYS + ")."
       });
     } else if (usedDays + newDays > LIMIT_TOTAL_DAYS - 3) {
-      // предупреждение — почти упёрлись в лимит
       w.push({
         kind: "warn",
         text: "Общий лимит: за 30 дней будет " + (usedDays + newDays) +
@@ -661,7 +802,6 @@
     return w;
   }
 
-  /* Есть ли в массиве ошибки, блокирующие сохранение */
   function hasBlockingErrors(warns) {
     return warns.some(w => w.kind === "err");
   }
@@ -708,7 +848,7 @@
       (v.staticId || "").toLowerCase().includes(q)
     );
 
-    const order = { active:0, overdue:1, upcoming:2, completed:3 };
+    const order = { active:0, overdue:1, upcoming:2, cancelled:3 };
     list.sort((a, b) => {
       const oa = order[a._status] ?? 9, ob = order[b._status] ?? 9;
       if (oa !== ob) return oa - ob;
@@ -735,7 +875,7 @@
   function buildRow(v) {
     const s = v._status;
     const dur = daysBetween(v.start, v.end);
-    const deptCls = "dept-" + String(v.department || "").toLowerCase();
+    const deptCls = "dept-" + String(v.department || "").toLowerCase().replace(/\s+/g, "-");
     const initial = (v.name || "?").trim().charAt(0).toUpperCase();
 
     let noteHtml = "";
@@ -748,6 +888,8 @@
     } else if (s === "upcoming") {
       const until = daysFromToday(v.start) * -1;
       noteHtml = '<span class="vac-note muted">через ' + until + ' дн.</span>';
+    } else if (s === "cancelled") {
+      noteHtml = '<span class="vac-note muted">🔄 возврат отмечен</span>';
     } else {
       noteHtml = '<span class="vac-note muted">завершён</span>';
     }
@@ -770,7 +912,9 @@
           '<span class="vac-dates">' + fmtShort(v.start) + '<span class="sep">→</span>' + fmtShort(v.end) + ' · ' + dur + ' дн.</span>' +
         '</div>' +
       '</div>' +
-      '<span class="status-badge ' + s + '"><span class="dot"></span>' + statusLabel(s) + '</span>' +
+      (s === "cancelled"
+        ? '<span class="status-badge cancelled" data-name="' + esc(v.name) + '" data-passport="' + esc(v.staticId || "") + '" data-reason="' + esc(v.returnReason || "") + '" title="Нажмите, чтобы увидеть причину">🔄 Отменён ℹ️</span>'
+        : '<span class="status-badge ' + s + '"><span class="dot"></span>' + statusLabel(s) + '</span>') +
       '<div>' + noteHtml + '</div>' +
       '<div class="vac-actions">' +
         (canEdit && (s === "active" || s === "overdue")
@@ -786,6 +930,16 @@
             '</button>' : '') +
       '</div>';
 
+    // Клик по плашке «Отменён»
+    const statusBadge = row.querySelector(".status-badge.cancelled");
+    if (statusBadge) {
+      statusBadge.addEventListener("click", () => openFinishInfoModal(
+        statusBadge.dataset.name,
+        statusBadge.dataset.passport,
+        statusBadge.dataset.reason
+      ));
+    }
+
     row.querySelector('[data-action="finish"]')?.addEventListener("click", () => finish(v));
     row.querySelector('[data-action="edit"]')?.addEventListener("click", () => openEdit(v));
     row.querySelector('[data-action="delete"]')?.addEventListener("click", () => del(v));
@@ -794,25 +948,74 @@
   }
 
   /* ---------- Действия ---------- */
-  async function finish(v) {
+  function finish(v) {
+    if (!isAdmin()) { showToast("Только для администраторов", "alert"); return; }
+    state.finishTarget = v;
+    $("finishWhoName").textContent = v.name || "—";
+    $("finishWhoSub").textContent = "#" + (v.staticId || "—") +
+      " · " + (v.department || "—") +
+      " · " + (v.type || "—") +
+      " · " + (v.start || "—") + " → " + (v.end || "—");
+    $("finishReason").value = "";
+    $("finishModal").classList.remove("hidden");
+    setTimeout(() => $("finishReason").focus(), 60);
+  }
+
+  function closeFinishModal() {
+    state.finishTarget = null;
+    $("finishModal").classList.add("hidden");
+  }
+
+  async function confirmFinish() {
+    if (!state.finishTarget) return;
+    const reason = $("finishReason").value.trim();
+    if (!reason) {
+      showToast("Введите причину возврата", "alert");
+      $("finishReason").focus();
+      return;
+    }
+    const v = state.finishTarget;
+    $("finishConfirm").disabled = true;
+
     try {
       const data = await apiPost({
         action: "finishVacation",
-        login: state.user.login, hash: state.user.hash,
-        targetRowIndex: v.rowIndex
+        login: state.user.login,
+        hash: state.user.hash,
+        targetRowIndex: v.rowIndex,
+        reason: reason
       });
-      if (!data.success) { showToast(data.message || "Ошибка", "alert"); return; }
+      if (!data.success) {
+        showToast(data.message || "Ошибка", "alert");
+        return;
+      }
       v.returned = true;
+      v.returnReason = reason;
       showToast("Возврат: " + v.name, "success");
       notifyParent("Возврат отмечен", v.name, "success");
+      closeFinishModal();
       await loadVacations();
     } catch (e) {
       console.error(e);
       showToast("Ошибка сети", "alert");
+    } finally {
+      $("finishConfirm").disabled = false;
     }
   }
 
+  function openFinishInfoModal(name, passport, reason) {
+    $("finishInfoWhoName").textContent = name || "—";
+    $("finishInfoWhoSub").textContent = "#" + (passport || "—");
+    $("finishInfoComment").textContent = reason || "(без комментария)";
+    $("finishInfoModal").classList.remove("hidden");
+  }
+
+  function closeFinishInfoModal() {
+    $("finishInfoModal").classList.add("hidden");
+  }
+
   async function del(v) {
+    if (!isAdmin()) { showToast("Только для администраторов", "alert"); return; }
     if (!confirm("Удалить отпуск «" + v.name + "»?")) return;
     try {
       const data = await apiPost({
@@ -941,7 +1144,7 @@
       el.className = "suggest-item";
       el.dataset.idx = i;
 
-      const deptCls = "dept-" + String(s.department || "").toLowerCase();
+      const deptCls = "dept-" + String(s.department || "").toLowerCase().replace(/\s+/g, "-");
 
       el.innerHTML =
         '<div class="s-main">' +
@@ -1078,11 +1281,9 @@
     const warns = validate(pseudo, state.editingRowIndex);
     const errs = warns.filter(w => w.kind === "err");
 
-    // Жёсткая блокировка — без "всё равно сохранить"
     if (hasBlockingErrors(warns)) {
       const msg = errs.map(w => "• " + w.text).join("\n");
       showToast("Сохранение невозможно: лимит нарушен", "alert");
-      // Обновим предупреждения в форме, чтобы было видно
       formWarnings.innerHTML = "";
       errs.forEach(w => {
         const div = document.createElement("div");
@@ -1198,6 +1399,12 @@
 
     fillSelects();
 
+    // Кнопка «Добавить» — только для администраторов
+    if (!isAdmin()) {
+      const addBtnEl = document.getElementById("addBtn");
+      if (addBtnEl) addBtnEl.classList.add("hidden");
+    }
+
     $("addBtn").addEventListener("click", openCreate);
     $("cancelBtn").addEventListener("click", closeForm);
     $("cancelBtn2").addEventListener("click", closeForm);
@@ -1214,6 +1421,26 @@
 
     attachSuggest(fName, nameSuggest, "name");
     attachSuggest(fPassport, passportSuggest, "passport");
+
+    // Модалка возврата
+    $("finishCancel").addEventListener("click", closeFinishModal);
+    $("finishConfirm").addEventListener("click", confirmFinish);
+    $("finishModal").addEventListener("click", (e) => {
+      if (e.target === $("finishModal")) closeFinishModal();
+    });
+
+    // Модалка информации о возврате
+    $("finishInfoClose").addEventListener("click", closeFinishInfoModal);
+    $("finishInfoModal").addEventListener("click", (e) => {
+      if (e.target === $("finishInfoModal")) closeFinishInfoModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if (!$("finishModal").classList.contains("hidden")) closeFinishModal();
+        if (!$("finishInfoModal").classList.contains("hidden")) closeFinishInfoModal();
+      }
+    });
 
     loadVacations();
     loadStaff();
