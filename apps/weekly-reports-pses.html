@@ -1139,9 +1139,9 @@ select option { background: #0c1420; color: var(--text); }
 
     const hasAnyPoints = report && (Number(report.points) || 0) > 0;
 
+    // Старший состав (ранг 10+) норму не имеет — плашка всегда "Без нормы"
     if (rank >= 10) {
-      if (hasAnyPoints) return { key: "norm", label: "📊 Без нормы", cls: "norm" };
-      return { key: "missing", label: "❌ Не сдал", cls: "bad" };
+      return { key: "norm", label: "📊 Без нормы", cls: "norm" };
     }
     if (report && (Number(report.points) || 0) >= NORM_PSES) {
       return { key: "ok", label: "✅ Норма выполнена", cls: "ok" };
