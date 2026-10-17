@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark" data-theme-mode="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,6 +37,58 @@
     --amber: #f5b94a;
     --amber-bg: rgba(245, 185, 74, 0.12);
     --amber-text: #fcd97e;
+
+    --body-bg: var(--bg);
+    --answer-bg: #0c1420;
+    --code-bg: #060a10;
+    --code-text: #c9d5e3;
+    --num-bg: #25344b;
+    --num-text: #8fa3ba;
+    --num-open-bg: #4CB1D8;
+    --num-open-text: #071018;
+    --form-bg: #060a10;
+  }
+
+  /* ============================================================
+     СВЕТЛАЯ ТЕМА
+     ============================================================ */
+  :root[data-theme="light"] {
+    --bg: #f5f7fa;
+    --panel: #ffffff;
+    --panel-2: #f0f4f8;
+    --panel-3: #e2e8f0;
+    --panel-hover: #e8eef5;
+
+    --text: #1a202c;
+    --text-soft: #2d3748;
+    --muted: #64748b;
+    --border: #cbd5e0;
+    --border-soft: #e2e8f0;
+    --border-strong: #94a3b8;
+
+    --accent: #0891b2;
+    --accent-2: #0e7490;
+    --accent-bg: rgba(8, 145, 178, 0.1);
+    --accent-bg-strong: rgba(8, 145, 178, 0.15);
+    --accent-border: rgba(8, 145, 178, 0.4);
+
+    --good: #16a34a;
+    --good-bg: rgba(22, 163, 74, 0.1);
+    --good-text: #166534;
+
+    --amber: #d97706;
+    --amber-bg: rgba(217, 119, 6, 0.1);
+    --amber-text: #b45309;
+
+    --body-bg: var(--bg);
+    --answer-bg: #f8fafc;
+    --code-bg: #f1f5f9;
+    --code-text: #1a202c;
+    --num-bg: #e2e8f0;
+    --num-text: #64748b;
+    --num-open-bg: #0891b2;
+    --num-open-text: #ffffff;
+    --form-bg: #f1f5f9;
   }
 
   html, body { height: 100%; }
@@ -52,7 +104,7 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: var(--bg);
+    background: var(--body-bg);
     color: var(--text);
     font-size: 16px;
     line-height: 1.5;
@@ -64,6 +116,7 @@
     align-items: center;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    transition: background 0.25s, color 0.25s;
   }
 
   .tablet {
@@ -116,6 +169,7 @@
     border-radius: 14px;
     padding: 18px;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+    transition: background 0.25s, border-color 0.25s;
   }
   .card + .card { margin-top: 14px; }
 
@@ -238,8 +292,8 @@
     flex-shrink: 0;
     width: 26px; height: 26px;
     border-radius: 7px;
-    background: var(--panel-3);
-    color: var(--muted);
+    background: var(--num-bg);
+    color: var(--num-text);
     font-weight: 600;
     font-size: 0.82rem;
     display: flex;
@@ -250,8 +304,8 @@
     transition: background 0.15s, color 0.15s;
   }
   .qa-item.open .q-num {
-    background: var(--accent);
-    color: #071018;
+    background: var(--num-open-bg);
+    color: var(--num-open-text);
     font-weight: 700;
   }
 
@@ -269,7 +323,7 @@
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.25s ease;
-    background: #0c1420;
+    background: var(--answer-bg);
     border-top: 1px solid var(--border-soft);
   }
   .qa-item.open .qa-answer {
@@ -352,10 +406,10 @@
     list-style: disc;
   }
   .guide-step .step-text li { margin: 5px 0; }
-  .guide-step .step-text b { color: #fff; font-weight: 600; }
+  .guide-step .step-text b { color: var(--text); font-weight: 600; }
   .guide-step .step-text code {
     font-family: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--code-bg);
     padding: 2px 8px;
     border-radius: 5px;
     font-size: 0.86rem;
@@ -382,12 +436,12 @@
   .form-example {
     margin-top: 10px;
     padding: 11px 14px;
-    background: #060a10;
+    background: var(--form-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     font-family: "JetBrains Mono", ui-monospace, "SF Mono", Consolas, monospace;
     font-size: 0.85rem;
-    color: var(--text-soft);
+    color: var(--code-text);
     white-space: pre-wrap;
     line-height: 1.7;
     letter-spacing: 0;
@@ -444,7 +498,7 @@
     display: flex; align-items: center; justify-content: center;
   }
   .info-banner .info-icon svg { width: 14px; height: 14px; color: var(--accent-2); }
-  .info-banner b { color: #fff; font-weight: 600; }
+  .info-banner b { color: var(--text); font-weight: 600; }
 
   /* Empty */
   .empty {
@@ -509,6 +563,73 @@
 <script>
 (function () {
   "use strict";
+
+  /* ============================================================
+     ТЕМА
+     ============================================================ */
+  const THEME_KEY = "pref_theme";
+
+  function systemTheme() {
+    try {
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    } catch (e) { return "dark"; }
+  }
+  function resolveThemeMode(mode) {
+    if (mode === "auto") return systemTheme();
+    return mode === "light" ? "light" : "dark";
+  }
+  function applyThemeMode(mode) {
+    if (!["light","dark","auto"].includes(mode)) mode = "dark";
+    const resolved = resolveThemeMode(mode);
+    document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.setAttribute("data-theme-mode", mode);
+  }
+  function initTheme() {
+    const p = new URLSearchParams(location.search);
+    const urlTheme = p.get("theme");
+    if (urlTheme && ["light","dark","auto"].includes(urlTheme)) {
+      applyThemeMode(urlTheme);
+      return;
+    }
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved && ["light","dark","auto"].includes(saved)) {
+        applyThemeMode(saved);
+        return;
+      }
+    } catch (e) {}
+    applyThemeMode("dark");
+  }
+
+  window.addEventListener("message", (e) => {
+    if (!e.data || typeof e.data !== "object") return;
+    if (e.data.type === "theme" && e.data.mode) {
+      applyThemeMode(e.data.mode);
+    }
+  });
+
+  try {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq && mq.addEventListener) {
+      mq.addEventListener("change", () => {
+        const mode = document.documentElement.getAttribute("data-theme-mode");
+        if (mode === "auto") applyThemeMode("auto");
+      });
+    } else if (mq && mq.addListener) {
+      mq.addListener(() => {
+        const mode = document.documentElement.getAttribute("data-theme-mode");
+        if (mode === "auto") applyThemeMode("auto");
+      });
+    }
+  } catch (e) {}
+
+  initTheme();
+
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: "theme-request" }, "*");
+    }
+  } catch (e) {}
 
   /* ============================================================
      ДАННЫЕ ЭКЗАМЕНОВ
