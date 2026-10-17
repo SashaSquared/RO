@@ -954,7 +954,7 @@
       
       <div class="duty-summary">
         <div class="duty-stat">
-          <span class="ds-lbl">Жадный итог</span>
+          <span class="ds-lbl">Итого</span>
           <span class="ds-val"><span id="dutyGreedy">0</span> <small>мин</small></span>
         </div>
         <div class="duty-stat highlight">
@@ -1328,7 +1328,7 @@ const NORMS = {
 
 const REMARK_BUTTONS = [
   { label:'🔗 Только Google/Яндекс.Диск',    text:'- Ссылки принимаются только с Google Drive / Яндекс.Диск' },
-  { label:'📸 Начало + каждые 30 минут',     text:'- Не приложены скрины начала работы и контрольные каждые 30 минут' },
+  { label:'⏳ Дежурства — скрин каждые 30 мин', text:'- На дежурствах скриншоты делаются каждые 30 минут' },
   { label:'📄 1 скрин = 1 справка',          text:'- Один скрин выдачи = одна справка' },
   { label:'✍️ Пустые поля без «-»',          text:'- Незадействованные графы оставляйте пустыми, без «-» и «0»' },
   { label:'📊 Недостаточно баллов',          text:'- Недостаточно баллов для нормы' },
@@ -2179,7 +2179,7 @@ function renderDashboard(r){
     if (r.min > 0) html += cat('🏥 Дежурство', r.min + ' мин (' + r.dutyPts + ' б.)');
     if (r.bodiAll > 0) html += cat('🎥 Без боди-камеры', r.bodiAll + ' шт.');
     if (r.instrOn && r.instrPts > 0) html += cat('👨‍🏫 Инструкторская работа', r.instrPts + ' б.');
-    html += `<div class="report-total">🏆 ИТОГО: <span class="total-val">${r.total}</span></div>`;
+    html += `<div class="report-total">Итого: <span class="total-val">${r.total}</span></div>`;
   } else {
     html += `<div class="report-subhead">📈 Повышение ${promo.value}</div>`;
     if (exam.checked)    html += cat('✅ Экзамен', 'Сдан');
@@ -2208,7 +2208,7 @@ function renderDashboard(r){
     if (hasSub) html += cat('🔄 Замены ГО↔МП', `${r.gos2mp} ⇄ ${r.mp2gos}`);
     if (r.extraPts > 0) html += cat('⭐ Доп. баллы', r.extraPts);
     if (r.bodiAll > 0) html += cat('🎥 Без боди-камеры', r.bodiAll + ' шт.');
-    html += `<div class="report-total">🏆 ИТОГО: <span class="total-val">${r.total}</span> / ${norm.pts}</div>`;
+    html += `<div class="report-total">Итого: <span class="total-val">${r.total}</span> / ${norm.pts}</div>`;
   }
 
   if (verdictOk){
@@ -2460,7 +2460,7 @@ window.generateReport = function(forceAccept){
     }
 
     lines.push('');
-    lines.push('**ИТОГО: ' + r.total + ' баллов**');
+    lines.push('**Итого: ' + r.total + ' баллов**');
     lines.push('');
     const acceptedWithRemark = forceAccept && fails.length > 0;
     if (acceptedWithRemark) {
@@ -2500,7 +2500,7 @@ window.generateReport = function(forceAccept){
     if (r.extraPts > 0) lines.push('> ⭐ Доп. баллов: ' + r.extraPts);
     if (r.bodiAll > 0) lines.push('> 🎥 Без боди-камеры: ' + r.bodiAll + ' шт.');
     lines.push('');
-    lines.push('**ИТОГО: ' + r.total + ' / ' + norm.pts + ' баллов**');
+    lines.push('**Итого: ' + r.total + ' / ' + norm.pts + ' баллов**');
     lines.push('');
     lines.push(fails.length === 0 ? '# ✅ ОТЧЁТ ОДОБРЕН #' : '# ❌ ОТЧЁТ ОТКЛОНЁН #');
     if (fails.length) fails.forEach(f => lines.push('• ' + f));
