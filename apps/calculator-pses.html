@@ -947,7 +947,7 @@
         Дежурство на посту
       </h2>
       <p class="bodi-info" style="margin-top:0;margin-bottom:12px;">
-        Норма — 15 минут (± 4 мин). Интервалы вне нормы подсвечиваются. Снимите галочку «учитывать», если считаете время фиктивным.
+        Норма — 30 минут (± 4 мин). Интервалы вне нормы подсвечиваются. Снимите галочку «учитывать», если считаете время фиктивным.
       </p>
       <div class="duty-intervals" id="dutyIntervals"></div>
       <button type="button" class="btn btn-ghost" id="addDutyIntervalBtn" style="margin-top:10px; font-size:0.8rem; padding:8px 14px;">+ Добавить интервал</button>
@@ -1471,8 +1471,8 @@ function updateDutyTotals() {
     if (row.querySelector('.duty-check').checked) counted += diff;
     const diffEl = row.querySelector('.duty-diff');
     diffEl.textContent = diff + ' мин';
-    const over = diff > 19;
-    const under = diff > 0 && diff < 11;
+    const over = diff > 34;
+    const under = diff > 0 && diff < 26;
     row.classList.toggle('duty-over', over);
     row.classList.toggle('duty-under', under);
   });
@@ -1486,8 +1486,8 @@ function addDutyIntervalRow(start, end, checked) {
   row.innerHTML =
     '<input type="time" class="duty-start" value="' + (start || '10:00') + '">' +
     '<span class="duty-dash">—</span>' +
-    '<input type="time" class="duty-end" value="' + (end || '10:15') + '">' +
-    '<span class="duty-diff">15 мин</span>' +
+    '<input type="time" class="duty-end" value="' + (end || '10:30') + '">' +
+    '<span class="duty-diff">30 мин</span>' +
     '<label class="duty-check-label">' +
       '<input type="checkbox" class="duty-check" ' + (checked !== false ? 'checked' : '') + '>' +
       '<span>учитывать</span>' +
@@ -1719,7 +1719,7 @@ function restoreState(s){
     s.dutyIntervals.forEach(d => addDutyIntervalRow(d.start, d.end, d.checked));
   } else {
     dutyIntervals.innerHTML = '';
-    addDutyIntervalRow('10:00', '10:15', true);
+    addDutyIntervalRow('10:00', '10:30', true);
   }
 
   subGosToMp.value      = s.subGosToMp ?? 0;
@@ -2553,7 +2553,7 @@ window.resetForm = function(){
   isInstructor.checked = false;
   showLunch      = false;
   dutyIntervals.innerHTML = '';
-  addDutyIntervalRow('10:00', '10:15', true);
+  addDutyIntervalRow('10:00', '10:30', true);
   subGosToMp.value = 0;
   subMpToGos.value = 0;
   extras = [];
@@ -2583,7 +2583,7 @@ remarks.addEventListener('input', () => {
 attachZeroClearAll(document);
 loadSavedState();
 if (!dutyIntervals.querySelector('.duty-interval-row')) {
-  addDutyIntervalRow('10:00', '10:15', true);
+  addDutyIntervalRow('10:00', '10:30', true);
 }
 renderExtras();
 updateAll();
@@ -2602,7 +2602,7 @@ fullname.addEventListener("change", () => {
 });
 
 addDutyIntervalBtn.addEventListener('click', () => {
-  addDutyIntervalRow('10:00', '10:15', true);
+  addDutyIntervalRow('10:00', '10:30', true);
   updateAll();
   debounceSave();
 });
